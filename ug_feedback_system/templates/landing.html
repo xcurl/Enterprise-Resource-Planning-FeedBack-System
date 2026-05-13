@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UG Feedback System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="landing-page">
+    <div class="landing-hero">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <i class="bi bi-mortarboard-fill display-1 mb-4"></i>
+                    <h1>UG Feedback System</h1>
+                    <p class="lead">
+                        A comprehensive platform for students to provide valuable feedback on faculty performance 
+                        and course outcomes. Help us improve the quality of education.
+                    </p>
+                    <div class="landing-buttons">
+                        <a href="{{ url_for('auth.login_page') }}" class="btn btn-light btn-lg">
+                            <i class="bi bi-person-fill me-2"></i>Student Login
+                        </a>
+                        <a href="{{ url_for('auth.admin_login_page') }}" class="btn btn-light-outline btn-lg">
+                            <i class="bi bi-shield-lock me-2"></i>Admin Login
+                        </a>
+                    </div>
+                    <div class="mt-4">
+                        <p class="small opacity-75">
+                            New student? <a href="{{ url_for('auth.register_page') }}" class="text-white fw-bold">Register here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-5 pt-5">
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <i class="bi bi-chat-square-text display-4 mb-3"></i>
+                        <h5>Faculty Feedback</h5>
+                        <p class="small opacity-75">Provide detailed feedback on teaching quality, communication, and more</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <i class="bi bi-list-check display-4 mb-3"></i>
+                        <h5>Course Outcome Survey</h5>
+                        <p class="small opacity-75">Rate your understanding and achievement of course objectives</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <i class="bi bi-graph-up display-4 mb-3"></i>
+                        <h5>Performance Reports</h5>
+                        <p class="small opacity-75">Auto-generated reports help improve teaching quality</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

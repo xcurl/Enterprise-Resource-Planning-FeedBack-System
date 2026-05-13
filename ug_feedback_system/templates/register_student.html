@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register Student</title>
+<style>
+body {
+    background: linear-gradient(135deg,#8360c3,#2ebf91);
+    font-family: Arial;
+}
+.card {
+    background: white;
+    width: 450px;
+    margin: 80px auto;
+    padding: 30px;
+    border-radius: 12px;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+}
+button {
+    background: #2ebf91;
+    color: white;
+    border: none;
+}
+</style>
+</head>
+
+<body>
+<div class="card">
+    <h2>Register Student</h2>
+    <form action="/students/register" method="POST">
+        <input name="student_name" placeholder="Student Name" required>
+        <input name="course_id" placeholder="Course ID" required>
+        <input name="year" placeholder="Academic Year" required>
+        <button>Register</button>
+    </form>
+</div>
+</body>
+</html>

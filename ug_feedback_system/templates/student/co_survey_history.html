@@ -1,0 +1,458 @@
+{% extends 'base.html' %}
+
+{% block title %}CO Survey History - UG Feedback System{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <div class="page-header">
+        <h1><i class="bi bi-file-earmark-text text-purple me-2"></i>CO Survey History</h1>
+        <p>View your course outcome survey responses.</p>
+    </div>
+
+    {% if history|length == 0 %}
+    <div class="form-card">
+        <div class="empty-state">
+            <i class="bi bi-list-check"></i>
+            <h4>No Surveys Yet</h4>
+            <p>You haven't completed any course outcome surveys yet.</p>
+            <a href="{{ url_for('student.co_survey') }}" class="btn btn-success mt-3">
+                <i class="bi bi-clipboard-check me-2"></i>Take Survey
+            </a>
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stats-card" style="border-left: 4px solid #6366f1;">
+                <div class="stats-content">
+                    <div class="stats-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="stats-info">
+                        <span class="stats-number" id="totalCourses">0</span>
+                        <span class="stats-label">Courses Evaluated</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card" style="border-left: 4px solid #22c55e;">
+                <div class="stats-content">
+                    <div class="stats-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                    <div class="stats-info">
+                        <span class="stats-number">{{ history|length }}</span>
+                        <span class="stats-label">Total CO Responses</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card" style="border-left: 4px solid #f59e0b;">
+                <div class="stats-content">
+                    <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <div class="stats-info">
+                        <span class="stats-number" id="avgAttainment">0</span>
+                        <span class="stats-label">Avg Attainment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="form-card mb-4">
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <label for="courseFilter" class="form-label"><i class="bi bi-funnel me-1"></i>Filter by Course</label>
+                <select id="courseFilter" class="form-select">
+                    <option value="">All Courses</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="attainmentFilter" class="form-label"><i class="bi bi-star me-1"></i>Filter by Attainment</label>
+                <select id="attainmentFilter" class="form-select">
+                    <option value="">All Levels</option>
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Below Average</option>
+                    <option value="1">1 - Poor</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary flex-grow-1" id="clearFilters">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary active" id="viewCards" title="Card View">
+                        <i class="bi bi-grid"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="viewTable" title="Table View">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grouped Cards View -->
+    <div id="cardsView">
+        <!-- Will be populated by JS -->
+    </div>
+
+    <!-- Table View (hidden by default) -->
+    <div id="tableView" style="display: none;">
+        <div class="table-container form-card">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>CO Number</th>
+                        <th>Description</th>
+                        <th>Attainment Level</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="form-card" style="display: none;">
+        <div class="empty-state py-4">
+            <i class="bi bi-search"></i>
+            <h5>No Results Found</h5>
+            <p class="text-muted">No surveys match your current filter criteria.</p>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<style>
+.course-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.course-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.course-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.course-header .badge {
+    background: rgba(255,255,255,0.2);
+    font-weight: 500;
+}
+
+.co-list {
+    padding: 0;
+}
+
+.co-item {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: background 0.2s;
+}
+
+.co-item:last-child {
+    border-bottom: none;
+}
+
+.co-item:hover {
+    background: #f8fafc;
+}
+
+.co-number {
+    min-width: 50px;
+}
+
+.co-details {
+    flex: 1;
+}
+
+.co-description {
+    font-size: 0.9rem;
+    color: #475569;
+    margin-bottom: 0.25rem;
+}
+
+.co-date {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.co-rating {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 80px;
+}
+
+.stars {
+    color: #f59e0b;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}
+
+.rating-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.attainment-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    width: 80px;
+    margin-top: 4px;
+}
+
+.attainment-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.attainment-5 { background: #22c55e; }
+.attainment-4 { background: #3b82f6; }
+.attainment-3 { background: #f59e0b; }
+.attainment-2 { background: #f97316; }
+.attainment-1 { background: #ef4444; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Parse history data
+    const historyData = {{ history|tojson|safe }};
+    
+    console.log('History data:', historyData);
+    
+    // Group by course
+    const courseGroups = {};
+    let totalAttainment = 0;
+    
+    historyData.forEach(item => {
+        const key = item.course_id;
+        if (!courseGroups[key]) {
+            courseGroups[key] = {
+                course_id: item.course_id,
+                course_code: item.course_code,
+                course_name: item.course_name,
+                items: []
+            };
+        }
+        courseGroups[key].items.push(item);
+        totalAttainment += item.attainment_level;
+    });
+    
+    // Update stats
+    document.getElementById('totalCourses').textContent = Object.keys(courseGroups).length;
+    document.getElementById('avgAttainment').textContent = historyData.length > 0 
+        ? (totalAttainment / historyData.length).toFixed(1) 
+        : '0';
+    
+    // Populate course filter
+    const courseFilter = document.getElementById('courseFilter');
+    Object.values(courseGroups).forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.course_id;
+        option.textContent = `${course.course_code} - ${course.course_name}`;
+        courseFilter.appendChild(option);
+    });
+    
+    // Render functions
+    function renderCards(filteredGroups) {
+        const container = document.getElementById('cardsView');
+        container.innerHTML = '';
+        
+        if (Object.keys(filteredGroups).length === 0) {
+            document.getElementById('noResults').style.display = 'block';
+            container.style.display = 'none';
+            return;
+        }
+        
+        document.getElementById('noResults').style.display = 'none';
+        container.style.display = 'block';
+        
+        Object.values(filteredGroups).forEach(course => {
+            const card = document.createElement('div');
+            card.className = 'course-card';
+            
+            const avgAttainment = course.items.reduce((sum, i) => sum + i.attainment_level, 0) / course.items.length;
+            
+            let itemsHtml = course.items.map(item => {
+                const stars = '★'.repeat(item.attainment_level) + '☆'.repeat(5 - item.attainment_level);
+                const date = new Date(item.submitted_at).toLocaleDateString('en-US', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric' 
+                });
+                const fillWidth = (item.attainment_level / 5) * 100;
+                
+                return `
+                    <div class="co-item">
+                        <div class="co-number">
+                            <span class="badge bg-primary">CO${item.co_number}</span>
+                        </div>
+                        <div class="co-details">
+                            <div class="co-description">${item.co_description || 'No description'}</div>
+                            <div class="co-date"><i class="bi bi-calendar3 me-1"></i>${date}</div>
+                        </div>
+                        <div class="co-rating">
+                            <span class="stars">${stars}</span>
+                            <div class="attainment-bar">
+                                <div class="attainment-fill attainment-${item.attainment_level}" style="width: ${fillWidth}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            card.innerHTML = `
+                <div class="course-header">
+                    <div>
+                        <h5>${course.course_code}</h5>
+                        <small style="opacity: 0.9;">${course.course_name}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge">${course.items.length} COs</span>
+                        <div class="small mt-1">Avg: ${avgAttainment.toFixed(1)}/5</div>
+                    </div>
+                </div>
+                <div class="co-list">${itemsHtml}</div>
+            `;
+            
+            container.appendChild(card);
+        });
+    }
+    
+    function renderTable(filteredData) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        if (filteredData.length === 0) {
+            document.getElementById('noResults').style.display = 'block';
+            document.getElementById('tableView').style.display = 'none';
+            return;
+        }
+        
+        document.getElementById('noResults').style.display = 'none';
+        
+        filteredData.forEach(item => {
+            const stars = '★'.repeat(item.attainment_level) + '☆'.repeat(5 - item.attainment_level);
+            const date = new Date(item.submitted_at).toLocaleDateString('en-US', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+            });
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <strong>${item.course_code}</strong><br>
+                    <small class="text-muted">${item.course_name}</small>
+                </td>
+                <td><span class="badge bg-primary">CO${item.co_number}</span></td>
+                <td>${item.co_description ? (item.co_description.length > 50 ? item.co_description.substring(0, 50) + '...' : item.co_description) : 'N/A'}</td>
+                <td>
+                    <span class="stars">${stars}</span>
+                    <span class="text-muted">(${item.attainment_level}/5)</span>
+                </td>
+                <td>${date}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    function applyFilters() {
+        const courseId = courseFilter.value;
+        const attainmentLevel = document.getElementById('attainmentFilter').value;
+        
+        let filteredData = [...historyData];
+        
+        if (courseId) {
+            filteredData = filteredData.filter(item => String(item.course_id) === courseId);
+        }
+        
+        if (attainmentLevel) {
+            filteredData = filteredData.filter(item => String(item.attainment_level) === attainmentLevel);
+        }
+        
+        // Regroup filtered data
+        const filteredGroups = {};
+        filteredData.forEach(item => {
+            const key = item.course_id;
+            if (!filteredGroups[key]) {
+                filteredGroups[key] = {
+                    course_id: item.course_id,
+                    course_code: item.course_code,
+                    course_name: item.course_name,
+                    items: []
+                };
+            }
+            filteredGroups[key].items.push(item);
+        });
+        
+        if (document.getElementById('cardsView').style.display !== 'none') {
+            renderCards(filteredGroups);
+        } else {
+            renderTable(filteredData);
+        }
+    }
+    
+    // Event listeners
+    courseFilter.addEventListener('change', applyFilters);
+    document.getElementById('attainmentFilter').addEventListener('change', applyFilters);
+    
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        courseFilter.value = '';
+        document.getElementById('attainmentFilter').value = '';
+        applyFilters();
+    });
+    
+    document.getElementById('viewCards').addEventListener('click', function() {
+        this.classList.add('active');
+        document.getElementById('viewTable').classList.remove('active');
+        document.getElementById('cardsView').style.display = 'block';
+        document.getElementById('tableView').style.display = 'none';
+        applyFilters();
+    });
+    
+    document.getElementById('viewTable').addEventListener('click', function() {
+        this.classList.add('active');
+        document.getElementById('viewCards').classList.remove('active');
+        document.getElementById('cardsView').style.display = 'none';
+        document.getElementById('tableView').style.display = 'block';
+        applyFilters();
+    });
+    
+    // Initial render
+    renderCards(courseGroups);
+});
+</script>
+{% endblock %}

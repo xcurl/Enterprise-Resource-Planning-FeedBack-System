@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty-Course Assignments - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    .search-input {
+        border-radius: 12px;
+        padding: 12px 16px;
+        padding-left: 45px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s;
+    }
+    
+    .search-input:focus {
+        border-color: #17a2b8;
+        box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.15);
+    }
+    
+    .search-wrapper {
+        position: relative;
+    }
+    
+    .search-wrapper i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .filter-select {
+        border-radius: 12px;
+        padding: 10px 16px;
+        border: 2px solid #e9ecef;
+    }
+    
+    .results-count {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    .table-row-hidden {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <div class="page-header">
+        <h1><i class="bi bi-diagram-3-fill text-info me-2"></i>Faculty-Course Assignments</h1>
+        <p>Assign faculty members to courses for the current semester.</p>
+    </div>
+
+    <div class="row">
+        <!-- Assignment Form -->
+        <div class="col-lg-4 mb-4">
+            <div class="form-card h-100">
+                <h5><i class="bi bi-plus-circle me-2"></i>New Assignment</h5>
+                
+                <form action="{{ url_for('admin.assign_faculty') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Faculty Member</label>
+                        <select class="form-select" name="faculty_id" required>
+                            <option value="">Select faculty...</option>
+                            {% for f in faculty %}
+                            <option value="{{ f.faculty_id }}">{{ f.faculty_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Course</label>
+                        <select class="form-select" name="course_id" required>
+                            <option value="">Select course...</option>
+                            {% for c in courses %}
+                            <option value="{{ c.course_id }}">{{ c.course_code }} - {{ c.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Academic Year</label>
+                            <input type="text" class="form-control" name="academic_year" value="2025-26" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Semester</label>
+                            <select class="form-select" name="semester" required>
+                                {% for i in range(1, 9) %}
+                                <option value="{{ i }}" {% if i == 2 %}selected{% endif %}>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Section</label>
+                        <select class="form-select" name="section">
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-link me-2"></i>Create Assignment
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Assignments List -->
+        <div class="col-lg-8 mb-4">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold"><i class="bi bi-search me-2"></i>Search</label>
+                        <div class="search-wrapper">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="form-control search-input" id="searchInput" 
+                                   placeholder="Search faculty or course..." onkeyup="filterAssignments()">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold"><i class="bi bi-calendar me-2"></i>Semester</label>
+                        <select class="form-select filter-select" id="semesterFilter" onchange="filterAssignments()">
+                            <option value="">All</option>
+                            {% for i in range(1, 9) %}
+                            <option value="{{ i }}">Sem {{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold"><i class="bi bi-grid me-2"></i>Section</label>
+                        <select class="form-select filter-select" id="sectionFilter" onchange="filterAssignments()">
+                            <option value="">All</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold"><i class="bi bi-calendar3 me-2"></i>Year</label>
+                        <select class="form-select filter-select" id="yearFilter" onchange="filterAssignments()">
+                            <option value="">All</option>
+                            {% set years = [] %}
+                            {% for a in assignments %}
+                                {% if a.academic_year and a.academic_year not in years %}
+                                    {% set _ = years.append(a.academic_year) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% for year in years|sort %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <span class="results-count" id="resultsCount">{{ assignments|length }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-card">
+                <h5><i class="bi bi-list-ul me-2"></i>Current Assignments</h5>
+                
+                {% if assignments|length == 0 %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-diagram-3"></i>
+                    <p>No faculty-course assignments yet.</p>
+                </div>
+                {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="assignmentsTable">
+                        <thead>
+                            <tr>
+                                <th>Faculty</th>
+                                <th>Course</th>
+                                <th>Year/Sem</th>
+                                <th>Section</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in assignments %}
+                            <tr data-faculty="{{ a.faculty_name|lower }}"
+                                data-course="{{ a.course_code|lower }} {{ a.course_name|lower }}"
+                                data-semester="{{ a.semester }}"
+                                data-section="{{ a.section }}"
+                                data-year="{{ a.academic_year }}">
+                                <td><strong>{{ a.faculty_name }}</strong></td>
+                                <td>{{ a.course_code }} - {{ a.course_name }}</td>
+                                <td>{{ a.academic_year }} / {{ a.semester }}</td>
+                                <td><span class="badge bg-secondary">{{ a.section }}</span></td>
+                                <td>
+                                    <form action="{{ url_for('admin.remove_assignment', assignment_id=a.assignment_id) }}" 
+                                          method="POST" class="d-inline" 
+                                          onsubmit="return confirm('Remove this assignment?')">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterAssignments() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const semesterFilter = document.getElementById('semesterFilter').value;
+    const sectionFilter = document.getElementById('sectionFilter').value;
+    const yearFilter = document.getElementById('yearFilter').value;
+    
+    const rows = document.querySelectorAll('#assignmentsTable tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const faculty = row.dataset.faculty || '';
+        const course = row.dataset.course || '';
+        const semester = row.dataset.semester || '';
+        const section = row.dataset.section || '';
+        const year = row.dataset.year || '';
+        
+        const matchesSearch = searchTerm === '' || 
+            faculty.includes(searchTerm) || 
+            course.includes(searchTerm);
+        
+        const matchesSemester = semesterFilter === '' || semester === semesterFilter;
+        const matchesSection = sectionFilter === '' || section === sectionFilter;
+        const matchesYear = yearFilter === '' || year === yearFilter;
+        
+        if (matchesSearch && matchesSemester && matchesSection && matchesYear) {
+            row.classList.remove('table-row-hidden');
+            visibleCount++;
+        } else {
+            row.classList.add('table-row-hidden');
+        }
+    });
+    
+    document.getElementById('resultsCount').textContent = visibleCount;
+}
+</script>
+{% endblock %}

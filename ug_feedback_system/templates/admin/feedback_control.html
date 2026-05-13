@@ -1,0 +1,834 @@
+{% extends 'base.html' %}
+
+{% block title %}Feedback Control - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .feedback-control-layout {
+        display: flex;
+        gap: 2rem;
+        align-items: stretch;
+        min-height: calc(100vh - 140px);
+    }
+
+    .create-panel {
+        width: 440px;
+        flex-shrink: 0;
+        padding-right: 0.5rem;
+    }
+
+    .periods-panel {
+        flex: 1;
+        padding-left: 1.5rem;
+        border-left: 2px solid #f1f5f9;
+        position: relative;
+    }
+
+    /* Enhanced Create Form Card */
+    .create-form-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+        position: relative;
+        top: 0;
+        min-height: calc(100vh - 160px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .create-form-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .create-form-card > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .create-form-card form {
+        margin-top: 1.5rem;
+    }
+
+    .form-header .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-size: 0.65rem;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .mode-chip {
+        padding: 0.4rem 1rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: rgba(255,255,255,0.25);
+        color: #fff;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.3);
+        transition: all 0.3s ease;
+    }
+
+    .mode-chip.editing {
+        background: #fbbf24;
+        color: #92400e;
+        border-color: #f59e0b;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .edit-alert {
+        display: none;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid #fbbf24;
+        border-radius: 16px;
+        padding: 0.875rem 1rem;
+        margin-bottom: 1.25rem;
+        margin-top: 1rem;
+        box-shadow: 0 8px 20px rgba(251, 191, 36, 0.2);
+    }
+
+    .edit-alert i {
+        color: #f59e0b;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .edit-alert strong {
+        color: #92400e;
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .edit-alert p {
+        color: #78716c;
+        font-size: 0.8rem;
+    }
+
+    /* Enhanced Form Styles */
+    .create-form-card .form-label {
+        color: rgba(255,255,255,0.95);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .create-form-card .form-control,
+    .create-form-card .form-select {
+        background: rgba(255,255,255,0.97);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 0.65rem 0.9rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .create-form-card .form-control:focus,
+    .create-form-card .form-select:focus {
+        background: white;
+        border-color: white;
+        box-shadow: 0 0 0 4px rgba(255,255,255,0.3);
+        outline: none;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 1.5rem;
+    }
+
+    .form-actions .btn {
+        font-weight: 600;
+        border-radius: 14px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .form-actions .btn.btn-light {
+        background: white;
+        color: #667eea;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-actions .btn.btn-light:hover {
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-actions .btn.btn-outline-light {
+        border: 2px solid white;
+        color: white;
+        background: transparent;
+    }
+
+    .form-actions .btn.btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Enhanced Info Note */
+    .info-note {
+        background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+        border-left: 5px solid #0284c7;
+        padding: 1rem 1.25rem;
+        border-radius: 16px;
+        color: #0f172a;
+        font-size: 0.85rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .info-note i {
+        color: #0284c7;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    /* Enhanced Period Card */
+    .period-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+        border: 2px solid #f1f5f9;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+        position: relative;
+        transition: all 0.3s ease;
+        overflow: visible;
+        isolation: isolate;
+    }
+
+    .period-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.03), transparent);
+        transition: left 0.5s ease;
+        z-index: -1;
+    }
+
+    .period-card:hover {
+        border-color: #e2e8f0;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
+        z-index: 1;
+    }
+
+    .period-card:hover::before {
+        left: 100%;
+    }
+
+    .period-card.active {
+        border-color: #22c55e;
+        background: linear-gradient(135deg, rgba(34,197,94,0.05) 0%, white 100%);
+        box-shadow: 0 8px 30px rgba(34, 197, 94, 0.2);
+    }
+
+    .period-card.active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        z-index: -1;
+    }
+    
+    .period-card h5 {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    /* Ensure dropdown appears above everything */
+    .period-card .dropdown.show {
+        z-index: 9999;
+    }
+
+    /* Enhanced Status Pills */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        gap: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .status-pill.active { 
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border-color: #10b981;
+    }
+    
+    .status-pill.inactive { 
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #78350f;
+        border-color: #f59e0b;
+    }
+    
+    .status-pill.closed { 
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border-color: #ef4444;
+    }
+    
+    .status-pill.scheduled { 
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+        border-color: #3b82f6;
+    }
+
+    .period-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .period-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .period-meta i {
+        color: #94a3b8;
+        font-size: 0.875rem;
+    }
+
+    /* Enhanced Type Badge */
+    .type-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        padding: 0.35rem 0.75rem;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        letter-spacing: 0.3px;
+    }
+
+    .type-badge.both { 
+        background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+        color: #6b21a8;
+        border-color: #a855f7;
+    }
+    
+    .type-badge.faculty { 
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border-color: #ef4444;
+    }
+    
+    .type-badge.co { 
+        background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+        color: #155e75;
+        border-color: #06b6d4;
+    }
+
+    /* Enhanced Action Dropdown */
+    .action-dropdown {
+        position: relative;
+    }
+    
+    .action-dropdown .btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #e2e8f0;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .action-dropdown .btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .action-dropdown .dropdown-menu {
+        border: none;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25) !important;
+        border-radius: 16px;
+        padding: 0.75rem;
+        min-width: 200px;
+        margin-top: 0.5rem !important;
+        position: absolute !important;
+        z-index: 9999 !important;
+        background: white;
+        will-change: transform;
+    }
+
+    .action-dropdown .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .action-dropdown .dropdown-item:hover {
+        background: #f1f5f9;
+    }
+
+    .action-dropdown .dropdown-item i {
+        font-size: 1rem;
+    }
+
+    .action-dropdown .dropdown-divider {
+        margin: 0.5rem 0;
+        border-color: #f1f5f9;
+    }
+
+    /* Enhanced Page Header */
+    .page-header h1 {
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .periods-panel-header {
+        background: linear-gradient(135deg, #f8fafc 0%, white 100%);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border: 2px solid #f1f5f9;
+    }
+
+    .periods-panel-header h5 {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .periods-panel-header .badge {
+        padding: 0.4rem 1rem;
+        font-weight: 700;
+        font-size: 0.75rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #fafbfc 0%, white 100%);
+        border-radius: 20px;
+        border: 2px dashed #e2e8f0;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .empty-state p.lead {
+        color: #475569;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p.small {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .feedback-control-layout {
+            flex-direction: column;
+            min-height: auto;
+        }
+        .create-panel,
+        .periods-panel {
+            width: 100%;
+            padding: 0;
+            border: none;
+        }
+        .create-form-card {
+            min-height: auto;
+        }
+        .periods-panel {
+            margin-top: 2rem;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .period-card {
+        animation: fadeInUp 0.5s ease;
+        animation-fill-mode: both;
+    }
+
+    .period-card:nth-child(1) { animation-delay: 0.05s; }
+    .period-card:nth-child(2) { animation-delay: 0.1s; }
+    .period-card:nth-child(3) { animation-delay: 0.15s; }
+    .period-card:nth-child(4) { animation-delay: 0.2s; }
+    .period-card:nth-child(5) { animation-delay: 0.25s; }
+</style>
+
+<div class="container-fluid px-4 py-4">
+    <div class="page-header mb-4">
+        <h1><i class="bi bi-sliders2-vertical text-primary me-3"></i>Feedback Control Center</h1>
+        <p class="mb-0">Manage semester-wise feedback periods with automated scheduling and activation.</p>
+    </div>
+
+
+    <div class="feedback-control-layout">
+        <!-- Create Panel -->
+        <div class="create-panel">
+            <div class="create-form-card">
+                <div class="d-flex justify-content-between align-items-start form-header">
+                    <div>
+                        <p class="eyebrow mb-0">FEEDBACK PERIOD</p>
+                        <h3 class="mb-1 fw-bold" id="formTitle">Create New Period</h3>
+                        <p class="small mb-0 opacity-75" id="formSubtitle">Schedule a new feedback window for a specific semester.</p>
+                    </div>
+                    <span class="mode-chip" id="formModeBadge">Create</span>
+                </div>
+
+                <div class="edit-alert" id="editAlert">
+                    <div>
+                        <strong id="editPeriodName">Period Name</strong>
+                        <p class="mb-0">You are editing this period. Update the fields below and click "Update Period".</p>
+                    </div>
+                </div>
+
+                <form id="periodForm" action="{{ url_for('admin.create_period') }}" method="POST" data-create-action="{{ url_for('admin.create_period') }}"  style="margin-top: 1.5rem;">
+                    <input type="hidden" id="period_id_field" name="period_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Period Name</label>
+                        <input type="text" class="form-control" id="period_name_input" name="period_name" placeholder="e.g., Mid-Semester Feedback 2026" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Academic Year</label>
+                            <input type="text" class="form-control" id="academic_year_input" name="academic_year" value="2025-26" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Semester</label>
+                            <select class="form-select" id="semester_select" name="semester" required>
+                                {% for i in range(1, 9) %}
+                                <option value="{{ i }}" {% if i == 5 %}selected{% endif %}>Semester {{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Start Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="start_date_input" name="start_date" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">End Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="end_date_input" name="end_date" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Feedback Type</label>
+                        <select class="form-select" id="feedback_type_select" name="feedback_type" required>
+                            <option value="both">Both (Faculty + CO Survey)</option>
+                            <option value="faculty">Faculty Feedback Only</option>
+                            <option value="course_outcome">CO Survey Only</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-light flex-grow-1" id="formSubmitBtn">
+                            <i class="bi bi-plus-circle-fill me-2"></i>Create Period
+                        </button>
+                        <button type="button" class="btn btn-outline-light" id="cancelEditBtn" style="display: none;" onclick="resetPeriodForm()">
+                            <i class="bi bi-x-lg me-1"></i>Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Periods Panel -->
+        <div class="periods-panel">
+            <div class="periods-panel-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0"><i class="bi bi-calendar-range-fill me-2"></i>All Feedback Periods</h5>
+                        <p class="text-muted small mb-0 mt-1">Sorted by newest schedule first</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        {% set active_count = namespace(count=0) %}
+                        {% for p in periods %}
+                            {% if p.start_date <= current_time and p.end_date >= current_time and not p.is_closed %}
+                                {% set active_count.count = active_count.count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        <span class="badge bg-success rounded-pill">{{ active_count.count }} Active</span>
+                        <span class="badge bg-primary rounded-pill">{{ periods|length }} Total</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if periods|length == 0 %}
+            <div class="empty-state">
+                <i class="bi bi-calendar-x"></i>
+                <p class="lead mb-2">No feedback periods yet</p>
+                <p class="small text-muted mb-0">Use the form on the left to create your first feedback period.</p>
+            </div>
+            {% else %}
+
+            {% for period in periods|sort(attribute='start_date', reverse=true) %}
+            {% set is_within_dates = period.start_date <= current_time and period.end_date >= current_time %}
+            {% set is_manually_closed = period.is_closed|default(false) %}
+            {% set is_future = period.start_date > current_time %}
+            {% set is_expired = period.end_date < current_time %}
+            {% set is_active = is_within_dates and not is_manually_closed %}
+            
+            <div class="period-card {% if is_active %}active{% endif %}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                            <h5 class="mb-0 fw-bold">{{ period.period_name }}</h5>
+                            {% if period.feedback_type == 'both' %}
+                            <span class="type-badge both"><i class="bi bi-collection-fill"></i>Faculty + CO</span>
+                            {% elif period.feedback_type == 'faculty' %}
+                            <span class="type-badge faculty"><i class="bi bi-person-fill"></i>Faculty</span>
+                            {% else %}
+                            <span class="type-badge co"><i class="bi bi-clipboard-check-fill"></i>CO Survey</span>
+                            {% endif %}
+                        </div>
+                        <div class="period-meta">
+                            <span><i class="bi bi-mortarboard-fill"></i>{{ period.academic_year }} • Sem {{ period.semester }}</span>
+                            <span><i class="bi bi-calendar-event-fill"></i>{{ period.start_date.strftime('%d %b') }} - {{ period.end_date.strftime('%d %b %Y') }}</span>
+                            <span><i class="bi bi-clock-fill"></i>{{ period.start_date.strftime('%H:%M') }} - {{ period.end_date.strftime('%H:%M') }}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {# Priority: Closed > Active > Scheduled > Expired #}
+                        {% if is_manually_closed and is_within_dates %}
+                        <span class="status-pill closed"><i class="bi bi-x-circle-fill"></i>Closed</span>
+                        {% elif is_active %}
+                        <span class="status-pill active"><i class="bi bi-check-circle-fill"></i>Active</span>
+                        {% elif is_future %}
+                        <span class="status-pill scheduled"><i class="bi bi-clock-history"></i>Scheduled</span>
+                        {% elif is_expired %}
+                        <span class="status-pill inactive"><i class="bi bi-hourglass-bottom"></i>Expired</span>
+                        {% else %}
+                        <span class="status-pill inactive"><i class="bi bi-pause-circle"></i>Inactive</span>
+                        {% endif %}
+                        
+                        <div class="dropdown action-dropdown">
+                            <button class="btn rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {# Show Close option if currently active #}
+                                {% if is_active %}
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="closePeriod({{ period.period_id }}, '{{ period.period_name }}'); return false;">
+                                        <i class="bi bi-door-closed-fill text-warning"></i>Close Window
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {# Show Open option if manually closed but within date range #}
+                                {% elif is_manually_closed and is_within_dates %}
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="openPeriod({{ period.period_id }}, '{{ period.period_name }}'); return false;">
+                                        <i class="bi bi-door-open-fill text-success"></i>Reopen Window
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="startEditPeriod({{ period.period_id }}, '{{ period.period_name }}', '{{ period.academic_year }}', {{ period.semester }}, '{{ period.start_date.strftime('%Y-%m-%dT%H:%M') }}', '{{ period.end_date.strftime('%Y-%m-%dT%H:%M') }}', '{{ period.feedback_type }}'); return false;">
+                                        <i class="bi bi-pencil-fill text-primary"></i>Edit Period
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" onclick="deletePeriod({{ period.period_id }}, '{{ period.period_name }}'); return false;">
+                                        <i class="bi bi-trash-fill"></i>Delete Period
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const periodForm = document.getElementById('periodForm');
+    if (!periodForm) return;
+
+    const periodNameInput = document.getElementById('period_name_input');
+    const academicYearInput = document.getElementById('academic_year_input');
+    const semesterSelect = document.getElementById('semester_select');
+    const startDateInput = document.getElementById('start_date_input');
+    const endDateInput = document.getElementById('end_date_input');
+    const feedbackTypeSelect = document.getElementById('feedback_type_select');
+    const periodIdField = document.getElementById('period_id_field');
+
+    const formTitle = document.getElementById('formTitle');
+    const formSubtitle = document.getElementById('formSubtitle');
+    const submitBtn = document.getElementById('formSubmitBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const modeBadge = document.getElementById('formModeBadge');
+    const editAlert = document.getElementById('editAlert');
+    const editPeriodName = document.getElementById('editPeriodName');
+
+    const createAction = periodForm.getAttribute('data-create-action');
+    const defaultValues = {
+        year: academicYearInput.value,
+        semester: semesterSelect.value,
+        type: feedbackTypeSelect.value
+    };
+
+    window.startEditPeriod = function(periodId, name, year, semester, startDate, endDate, type) {
+        // Scroll to form
+        document.querySelector('.create-form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        periodIdField.value = periodId;
+        periodForm.action = `/admin/edit-period/${periodId}`;
+        periodNameInput.value = name;
+        academicYearInput.value = year;
+        semesterSelect.value = semester;
+        startDateInput.value = startDate;
+        endDateInput.value = endDate;
+        feedbackTypeSelect.value = type;
+
+        formTitle.textContent = 'Edit Feedback Period';
+        formSubtitle.textContent = 'Update the feedback window details and save your changes.';
+        submitBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Update Period';
+        cancelBtn.style.display = 'inline-flex';
+        modeBadge.textContent = 'Editing';
+        modeBadge.classList.add('editing');
+        editAlert.style.display = 'flex';
+        editPeriodName.textContent = name;
+    };
+
+    window.resetPeriodForm = function() {
+        periodForm.action = createAction;
+        periodIdField.value = '';
+        periodForm.reset();
+        academicYearInput.value = defaultValues.year;
+        semesterSelect.value = defaultValues.semester;
+        feedbackTypeSelect.value = defaultValues.type;
+        startDateInput.value = '';
+        endDateInput.value = '';
+
+        formTitle.textContent = 'Create New Period';
+        formSubtitle.textContent = 'Schedule a new feedback window for a specific semester.';
+        submitBtn.innerHTML = '<i class="bi bi-plus-circle-fill me-2"></i>Create Period';
+        cancelBtn.style.display = 'none';
+        modeBadge.textContent = 'Create';
+        modeBadge.classList.remove('editing');
+        editAlert.style.display = 'none';
+        editPeriodName.textContent = '';
+    };
+
+    window.deletePeriod = function(periodId, name) {
+        if (confirm(`Are you sure you want to delete "${name}"?\n\nThis action cannot be undone and will permanently remove all associated data.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/delete-period/${periodId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    window.closePeriod = function(periodId, name) {
+        if (confirm(`Close the feedback window for "${name}"?\n\nStudents will no longer be able to submit responses until you manually reopen it.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/close-period/${periodId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    window.openPeriod = function(periodId, name) {
+        if (confirm(`Reopen the feedback window for "${name}"?\n\nStudents will be able to submit feedback responses again.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/open-period/${periodId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+});
+</script>
+
+{% endblock %}

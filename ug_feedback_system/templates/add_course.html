@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Course</title>
+<style>
+body {
+    background: linear-gradient(135deg,#43cea2,#185a9d);
+    font-family: Arial;
+}
+.card {
+    background: white;
+    width: 400px;
+    margin: 120px auto;
+    padding: 30px;
+    border-radius: 12px;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+}
+button {
+    background: #185a9d;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="card">
+    <h2>Add Course</h2>
+    <form action="/courses/create" method="POST">
+        <input name="course_name" placeholder="Course Name" required>
+        <button>Create Course</button>
+    </form>
+</div>
+</body>
+</html>

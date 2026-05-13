@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - UG Feedback System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <div class="auth-card" style="max-width: 550px;">
+        <div class="auth-logo">
+            <i class="bi bi-person-plus-fill"></i>
+            <h1>Student Registration</h1>
+            <p class="text-muted">Create your account to submit feedback</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form action="{{ url_for('auth.register') }}" method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="student_name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="student_name" name="student_name" 
+                           placeholder="John Doe" required>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="usn" class="form-label">USN</label>
+                    <input type="text" class="form-control" id="usn" name="usn" 
+                           placeholder="1XX21CS001" required style="text-transform: uppercase;">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" class="form-control" id="email" name="email" 
+                       placeholder="student@example.com" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" 
+                           placeholder="Min 6 characters" required minlength="6">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                           placeholder="Repeat password" required minlength="6">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="branch_id" class="form-label">Branch/Department</label>
+                <select class="form-select" id="branch_id" name="branch_id" required>
+                    <option value="">Select your branch</option>
+                    {% for branch in branches %}
+                    <option value="{{ branch.branch_id }}">
+                        {{ branch.branch_code }} - {{ branch.branch_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="year" class="form-label">Year</label>
+                    <select class="form-select" id="year" name="year" required onchange="updateSemesters()">
+                        <option value="">Select year</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="semester" class="form-label">Semester</label>
+                    <select class="form-select" id="semester" name="semester" required>
+                        <option value="">Select year first</option>
+                    </select>
+                    <small class="form-text text-muted">Semester is based on your year</small>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="section" class="form-label">Section (Optional)</label>
+                    <select class="form-select" id="section" name="section">
+                        <option value="">No Section</option>
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                    </select>
+                    <small class="form-text text-muted">Select your class section if applicable</small>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 mb-3">
+                <i class="bi bi-person-plus me-2"></i>Create Account
+            </button>
+        </form>
+        
+        <div class="text-center mt-4">
+            <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login_page') }}">Login here</a></p>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update semesters based on year selection
+        function updateSemesters() {
+            const year = document.getElementById('year').value;
+            const semesterSelect = document.getElementById('semester');
+            
+            semesterSelect.innerHTML = '';
+            
+            if (!year) {
+                semesterSelect.innerHTML = '<option value="">Select year first</option>';
+                return;
+            }
+            
+            const yearNum = parseInt(year);
+            const sem1 = (yearNum * 2) - 1;
+            const sem2 = yearNum * 2;
+            
+            semesterSelect.innerHTML = `
+                <option value="">Select semester</option>
+                <option value="${sem1}">${sem1}${getOrdinalSuffix(sem1)} Semester (Odd)</option>
+                <option value="${sem2}">${sem2}${getOrdinalSuffix(sem2)} Semester (Even)</option>
+            `;
+        }
+        
+        function getOrdinalSuffix(n) {
+            const s = ['th', 'st', 'nd', 'rd'];
+            const v = n % 100;
+            return s[(v - 20) % 10] || s[v] || s[0];
+        }
+        
+        // Password match validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            if (password !== confirm) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
+        });
+    </script>
+</body>
+</html>

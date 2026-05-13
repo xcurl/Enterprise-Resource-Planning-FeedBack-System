@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Submit Feedback</title>
+<style>
+body {
+    background: linear-gradient(135deg,#ff758c,#ff7eb3);
+    font-family: Arial;
+}
+.card {
+    background: white;
+    width: 500px;
+    margin: 60px auto;
+    padding: 30px;
+    border-radius: 12px;
+}
+input, textarea, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+}
+textarea {
+    resize: none;
+}
+button {
+    background: #ff758c;
+    color: white;
+    border: none;
+}
+.rating span {
+    font-size: 24px;
+    cursor: pointer;
+}
+.rating span.active {
+    color: gold;
+}
+</style>
+</head>
+
+<body>
+<div class="card">
+    <h2>Submit Feedback</h2>
+
+    <form action="/feedback/submit" method="POST">
+        <input name="student_id" placeholder="Student ID" required>
+        <input name="faculty_id" placeholder="Faculty ID" required>
+
+        <div class="rating">
+            <span onclick="setRating(1)">★</span>
+            <span onclick="setRating(2)">★</span>
+            <span onclick="setRating(3)">★</span>
+            <span onclick="setRating(4)">★</span>
+            <span onclick="setRating(5)">★</span>
+        </div>
+
+        <input type="hidden" name="rating" id="rating" required>
+
+        <textarea name="comments" placeholder="Write feedback..."></textarea>
+        <button>Submit Feedback</button>
+    </form>
+</div>
+
+<script>
+function setRating(value) {
+    document.getElementById("rating").value = value;
+    document.querySelectorAll(".rating span").forEach((star, i) => {
+        star.classList.toggle("active", i < value);
+    });
+}
+</script>
+</body>
+</html>

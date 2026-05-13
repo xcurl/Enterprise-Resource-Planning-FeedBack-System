@@ -1,0 +1,644 @@
+{% extends 'base.html' %}
+
+{% block title %}Course Outcome Survey - UG Feedback System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .survey-hero {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 24px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .survey-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    
+    .survey-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 250px;
+        height: 250px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 50%;
+    }
+    
+    .survey-hero h1 {
+        font-weight: 700;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .survey-hero p {
+        opacity: 0.95;
+        margin-bottom: 0;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .pending-courses {
+        background: rgba(255,255,255,0.2);
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 15px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Course Survey Card */
+    .course-survey-card {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .course-survey-card:hover {
+        box-shadow: 0 15px 50px rgba(17, 153, 142, 0.15);
+        border-color: #11998e;
+    }
+    
+    .course-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e9 100%);
+        padding: 25px 30px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .course-header-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .course-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        box-shadow: 0 8px 25px rgba(17, 153, 142, 0.3);
+    }
+    
+    .course-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 5px;
+    }
+    
+    .course-subtitle {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .co-count-badge {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    .course-body {
+        padding: 30px;
+    }
+    
+    /* CO Item Card */
+    .co-item {
+        background: #f8f9fa;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .co-item:hover {
+        background: white;
+        border-color: #11998e;
+        box-shadow: 0 8px 25px rgba(17, 153, 142, 0.1);
+        transform: translateX(5px);
+    }
+    
+    .co-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .co-number {
+        min-width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 0.85rem;
+    }
+    
+    .co-content {
+        flex: 1;
+    }
+    
+    .co-description {
+        font-weight: 500;
+        color: #1a1a2e;
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+    
+    .bloom-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .bloom-remembering { background: #e3f2fd; color: #1565c0; }
+    .bloom-understanding { background: #e8f5e9; color: #2e7d32; }
+    .bloom-applying { background: #fff3e0; color: #ef6c00; }
+    .bloom-analyzing { background: #fce4ec; color: #c2185b; }
+    .bloom-evaluating { background: #f3e5f5; color: #7b1fa2; }
+    .bloom-creating { background: #e0f7fa; color: #00838f; }
+    
+    /* Enhanced Star Rating for CO */
+    .co-rating {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+    }
+    
+    .rating-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.85rem;
+        min-width: 100px;
+    }
+    
+    .star-rating-co {
+        display: flex;
+        gap: 8px;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+    
+    .star-rating-co input {
+        display: none;
+    }
+    
+    .star-rating-co label {
+        font-size: 28px;
+        color: #ddd;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .star-rating-co label:hover {
+        transform: scale(1.2);
+    }
+    
+    .star-rating-co input:checked ~ label,
+    .star-rating-co label:hover,
+    .star-rating-co label:hover ~ label {
+        color: #11998e;
+        text-shadow: 0 0 15px rgba(17, 153, 142, 0.5);
+    }
+    
+    .star-rating-co input:checked ~ label {
+        animation: starBounce 0.3s ease;
+    }
+    
+    @keyframes starBounce {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+    
+    /* Rating Guide */
+    .rating-guide {
+        background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-top: 25px;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .rating-guide-title {
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .rating-levels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .rating-level {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        padding: 8px 15px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .rating-level .stars {
+        color: #11998e;
+        font-weight: 600;
+    }
+    
+    .rating-level .desc {
+        color: #6c757d;
+    }
+    
+    /* Submit Button */
+    .submit-section {
+        padding: 25px 30px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e9 100%);
+        border-top: 2px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .submit-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .submit-info i {
+        color: #11998e;
+    }
+    
+    .btn-submit-survey {
+        padding: 14px 35px;
+        border-radius: 12px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        color: white;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+    }
+    
+    .btn-submit-survey:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(17, 153, 142, 0.4);
+        color: white;
+    }
+    
+    /* Empty State */
+    .empty-state-container {
+        background: white;
+        border-radius: 24px;
+        padding: 60px 40px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    }
+    
+    .empty-state-icon {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 50px;
+        color: #11998e;
+        margin: 0 auto 25px;
+    }
+    
+    .empty-state-container h4 {
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state-container p {
+        color: #6c757d;
+        max-width: 400px;
+        margin: 0 auto 25px;
+    }
+    
+    @media (max-width: 768px) {
+        .course-header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .co-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .co-rating {
+            flex-direction: column;
+        }
+        
+        .submit-section {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+    }
+    
+    /* Filter Section */
+    .filter-section {
+        margin-bottom: 25px;
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 25px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    
+    .filter-label {
+        font-weight: 600;
+        color: #1a1a2e;
+        display: block;
+        margin-bottom: 10px;
+    }
+    
+    .filter-select {
+        border-radius: 12px;
+        padding: 12px 16px;
+        border: 2px solid #e9ecef;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .filter-select:focus {
+        border-color: #11998e;
+        box-shadow: 0 0 0 3px rgba(17, 153, 142, 0.15);
+    }
+    
+    .quick-nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .quick-nav-link {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e9 100%);
+        color: #11998e;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .quick-nav-link:hover {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="survey-hero">
+        <h1><i class="bi bi-clipboard-check me-3"></i>Course Outcome Survey</h1>
+        <p>Assess your learning achievement for each course outcome. Your responses help improve curriculum design.</p>
+        {% if courses|length > 0 %}
+        <div class="pending-courses">
+            <i class="bi bi-journal-bookmark me-2"></i>{{ courses|length }} Course{{ 's' if courses|length > 1 else '' }} to Survey
+        </div>
+        {% endif %}
+    </div>
+
+    {% if courses|length == 0 %}
+    <!-- Empty State -->
+    <div class="empty-state-container">
+        <div class="empty-state-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h4>All Surveys Completed! 🎉</h4>
+        <p>You've completed all course outcome surveys, or your enrolled courses don't have course outcomes defined yet.</p>
+        <a href="{{ url_for('student.my_courses') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-book me-2"></i>View My Courses
+        </a>
+    </div>
+    {% else %}
+    
+    <!-- Course Filter Dropdown -->
+    <div class="filter-section mb-4">
+        <div class="filter-card">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <label class="filter-label">
+                        <i class="bi bi-funnel me-2"></i>Filter by Course
+                    </label>
+                    <select class="form-select filter-select" id="courseFilter" onchange="filterCourses()">
+                        <option value="all">All Courses ({{ courses|length }})</option>
+                        {% for course_id, course in courses.items() %}
+                        <option value="course-{{ course_id }}">{{ course.course_code }} - {{ course.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <div class="quick-nav">
+                        <span class="text-muted me-2">Jump to:</span>
+                        {% for course_id, course in courses.items() %}
+                        <a href="#course-{{ course_id }}" class="quick-nav-link">{{ course.course_code }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% for course_id, course in courses.items() %}
+    <div class="course-survey-card" id="course-{{ course_id }}" data-course="course-{{ course_id }}">
+        <!-- Course Header -->
+        <div class="course-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="course-header-content">
+                    <div class="course-icon">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div>
+                        <h4 class="course-title">{{ course.course_code }}</h4>
+                        <p class="course-subtitle">{{ course.course_name }}</p>
+                    </div>
+                </div>
+                <div class="co-count-badge">
+                    <i class="bi bi-list-check me-2"></i>{{ course.outcomes|length }} Course Outcomes
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Body -->
+        <form action="{{ url_for('student.submit_co_survey_route') }}" method="POST">
+            <input type="hidden" name="course_id" value="{{ course_id }}">
+            
+            <div class="course-body">
+                <!-- CO Items -->
+                {% for co in course.outcomes %}
+                <div class="co-item">
+                    <div class="co-header">
+                        <div class="co-number">CO{{ co.co_number }}</div>
+                        <div class="co-content">
+                            <p class="co-description">{{ co.co_description }}</p>
+                            {% if co.bloom_level %}
+                            <span class="bloom-badge bloom-{{ co.bloom_level|lower }}">
+                                <i class="bi bi-diagram-3"></i>
+                                {{ co.bloom_level }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="co-rating">
+                        <span class="rating-label">Your Achievement:</span>
+                        <div class="star-rating-co">
+                            {% for i in range(5, 0, -1) %}
+                            <input type="radio" name="co_level_{{ co.co_id }}" 
+                                   id="co{{ co.co_id }}_{{ i }}" value="{{ i }}" 
+                                   {% if i == 3 %}checked{% endif %} required>
+                            <label for="co{{ co.co_id }}_{{ i }}" title="{{ i }} - {% if i == 5 %}Fully Achieved{% elif i == 4 %}Substantially Achieved{% elif i == 3 %}Moderately Achieved{% elif i == 2 %}Partially Achieved{% else %}Not Achieved{% endif %}">★</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Rating Guide -->
+                <div class="rating-guide">
+                    <div class="rating-guide-title">
+                        <i class="bi bi-info-circle text-primary"></i>
+                        Achievement Level Guide
+                    </div>
+                    <div class="rating-levels">
+                        <div class="rating-level">
+                            <span class="stars">★</span>
+                            <span class="desc">Not Achieved</span>
+                        </div>
+                        <div class="rating-level">
+                            <span class="stars">★★</span>
+                            <span class="desc">Partially Achieved</span>
+                        </div>
+                        <div class="rating-level">
+                            <span class="stars">★★★</span>
+                            <span class="desc">Moderately Achieved</span>
+                        </div>
+                        <div class="rating-level">
+                            <span class="stars">★★★★</span>
+                            <span class="desc">Substantially Achieved</span>
+                        </div>
+                        <div class="rating-level">
+                            <span class="stars">★★★★★</span>
+                            <span class="desc">Fully Achieved</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Section -->
+            <div class="submit-section">
+                <div class="submit-info">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Your responses are confidential and used for academic improvement only.
+                </div>
+                <button type="submit" class="btn btn-submit-survey">
+                    <i class="bi bi-send-fill"></i>
+                    Submit Survey
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+function filterCourses() {
+    const filterValue = document.getElementById('courseFilter').value;
+    const cards = document.querySelectorAll('.course-survey-card');
+    
+    cards.forEach(card => {
+        if (filterValue === 'all' || card.dataset.course === filterValue) {
+            card.style.display = 'block';
+            card.style.animation = 'fadeIn 0.3s ease';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Smooth scroll to course
+document.querySelectorAll('.quick-nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            // First show the course if filtered out
+            document.getElementById('courseFilter').value = 'all';
+            filterCourses();
+            
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Highlight effect
+                target.style.boxShadow = '0 0 0 4px rgba(17, 153, 142, 0.3)';
+                setTimeout(() => {
+                    target.style.boxShadow = '';
+                }, 2000);
+            }, 100);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Feedback Report</title>
+<style>
+body {
+    background: #f4f6f8;
+    font-family: Arial;
+}
+table {
+    width: 90%;
+    margin: 60px auto;
+    border-collapse: collapse;
+    background: white;
+}
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+}
+th {
+    background: #667eea;
+    color: white;
+}
+tr:hover {
+    background: #f1f1f1;
+}
+</style>
+</head>
+
+<body>
+<h2 style="text-align:center;">Feedback Report</h2>
+
+<table>
+<tr>
+    <th>Student</th>
+    <th>Faculty</th>
+    <th>Course</th>
+    <th>Rating</th>
+    <th>Comments</th>
+</tr>
+
+{% for row in report %}
+<tr>
+    <td>{{ row.student_name }}</td>
+    <td>{{ row.faculty_name }}</td>
+    <td>{{ row.course_name }}</td>
+    <td>{{ row.rating }}/5</td>
+    <td>{{ row.comments }}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>

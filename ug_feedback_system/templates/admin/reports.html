@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Admin{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <div class="page-header">
+        <h1><i class="bi bi-graph-up text-warning me-2"></i>Performance Reports</h1>
+        <p>View faculty performance and course outcome analysis.</p>
+    </div>
+
+    <!-- Faculty Performance Summary -->
+    <div class="form-card mb-4">
+        <h5><i class="bi bi-person-badge me-2"></i>Faculty Performance Summary</h5>
+
+        {% if faculty_summary|length == 0 %}
+        <div class="empty-state py-4">
+            <i class="bi bi-graph-down"></i>
+            <p>No feedback data available yet.</p>
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Faculty Name</th>
+                        <th>Department</th>
+                        <th>Feedbacks</th>
+                        <th>Teaching</th>
+                        <th>Communication</th>
+                        <th>Punctuality</th>
+                        <th>Knowledge</th>
+                        <th>Helping</th>
+                        <th>Overall</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in faculty_summary %}
+                    <tr>
+                        <td><strong>{{ f.faculty_name }}</strong></td>
+                        <td>{{ f.department or 'N/A' }}</td>
+                        <td><span class="badge bg-primary">{{ f.feedback_count }}</span></td>
+
+                        {% set metrics = [
+                            f.avg_teaching,
+                            f.avg_communication,
+                            f.avg_punctuality,
+                            f.avg_knowledge,
+                            f.avg_helping
+                        ] %}
+                        
+                        {% for m in metrics %}
+                        <td>
+                            {% if m %}
+                            {% set width = (m / 5) * 100 %}
+                            {% set rating_class = 'excellent' if m >= 4 else ('good' if m >= 3 else 'average') %}
+                            <div class="d-flex align-items-center">
+                                <div class="rating-bar me-2">
+                                    <div class="fill {{ rating_class }}" style="width: {{ width }}%;"></div>
+                                </div>
+                                <span class="small">{{ "%.1f"|format(m) }}</span>
+                            </div>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+
+                        <td>
+                            {% if f.avg_overall %}
+                            <span class="badge {% if f.avg_overall >= 4 %}bg-success{% elif f.avg_overall >= 3 %}bg-primary{% else %}bg-warning{% endif %}">
+                                {{ "%.1f"|format(f.avg_overall) }}/5
+                            </span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin.faculty_report', faculty_id=f.faculty_id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Course Outcome Summary -->
+    <div class="form-card">
+        <h5><i class="bi bi-list-check me-2"></i>Course Outcome Attainment Summary</h5>
+
+        {% if co_summary|length == 0 %}
+        <div class="empty-state py-4">
+            <i class="bi bi-list-task"></i>
+            <p>No course outcome survey data available yet.</p>
+        </div>
+        {% else %}
+        
+        <!-- Course Filter -->
+        <div class="mb-4">
+            <label for="courseFilter" class="form-label"><strong>Select Course:</strong></label>
+            <select id="courseFilter" class="form-select" style="max-width: 400px;">
+                <option value="">-- Select a Course --</option>
+                {% set seen_courses = [] %}
+                {% for co in co_summary %}
+                    {% if co.course_id not in seen_courses %}
+                        {% set _ = seen_courses.append(co.course_id) %}
+                        <option value="{{ co.course_id }}">{{ co.course_code }} - {{ co.course_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Course Details Card (hidden initially) -->
+        <div id="courseDetailsCard" style="display: none;">
+            <div class="alert alert-info mb-4">
+                <h6 class="mb-2"><i class="bi bi-book me-2"></i><span id="selectedCourseName"></span></h6>
+                <p class="mb-0 small">Course Code: <strong id="selectedCourseCode"></strong></p>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="mb-4" style="max-width: 800px; margin: 0 auto; height: 350px;">
+                <canvas id="coAttainmentChart"></canvas>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="table-responsive">
+                <table class="table table-hover" id="coDetailsTable">
+                    <thead>
+                        <tr>
+                            <th>CO</th>
+                            <th>Description</th>
+                            <th>Responses</th>
+                            <th>Avg Attainment</th>
+                            <th>Visualization</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="alert alert-secondary text-center py-4">
+            <i class="bi bi-funnel" style="font-size: 2rem;"></i>
+            <p class="mb-0 mt-2">Please select a course to view its Course Outcome attainment data.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Parse CO data safely
+    const coDataRaw = {{ co_summary|tojson|safe }};
+    
+    // Convert Decimal to float explicitly
+    const coData = coDataRaw.map(co => ({
+        ...co,
+        avg_attainment: parseFloat(co.avg_attainment) || 0,
+        response_count: parseInt(co.response_count) || 0
+    }));
+    
+    console.log('CO Data:', coData);
+    
+    // Group by course
+    const courseData = {};
+    coData.forEach(co => {
+        if (!courseData[co.course_id]) {
+            courseData[co.course_id] = {
+                course_id: co.course_id,
+                course_code: co.course_code,
+                course_name: co.course_name,
+                outcomes: []
+            };
+        }
+        courseData[co.course_id].outcomes.push(co);
+    });
+    
+    console.log('Grouped courses:', courseData);
+    
+    let currentChart = null;
+    
+    const courseFilter = document.getElementById('courseFilter');
+    const courseDetailsCard = document.getElementById('courseDetailsCard');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (!courseFilter) {
+        console.log('No course filter found');
+        return;
+    }
+    
+    courseFilter.addEventListener('change', function() {
+        const courseId = this.value;
+        console.log('Selected course:', courseId);
+        
+        if (!courseId) {
+            courseDetailsCard.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+        
+        const course = courseData[courseId];
+        if (!course) {
+            console.error('Course not found for ID:', courseId);
+            return;
+        }
+        
+        console.log('Course data:', course);
+        
+        // Show course details
+        emptyState.style.display = 'none';
+        courseDetailsCard.style.display = 'block';
+        
+        document.getElementById('selectedCourseName').textContent = course.course_name;
+        document.getElementById('selectedCourseCode').textContent = course.course_code;
+        
+        // Update table
+        updateCOTable(course.outcomes);
+        
+        // Update chart
+        updateCOChart(course);
+    });
+    
+    function updateCOTable(outcomes) {
+        const tbody = document.querySelector('#coDetailsTable tbody');
+        tbody.innerHTML = '';
+        
+        outcomes.forEach(co => {
+            const avgVal = parseFloat(co.avg_attainment) || 0;
+            const width = (avgVal / 5) * 100;
+            let colorClass = 'average';
+            let barColor = '#fb923c';
+            
+            if (avgVal >= 4) {
+                colorClass = 'excellent';
+                barColor = '#22c55e';
+            } else if (avgVal >= 3) {
+                colorClass = 'good';
+                barColor = '#3b82f6';
+            }
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><span class="badge bg-primary">CO${co.co_number}</span></td>
+                <td>${co.co_description || 'N/A'}</td>
+                <td><span class="badge bg-secondary">${co.response_count}</span></td>
+                <td><strong>${avgVal.toFixed(1)}/5</strong></td>
+                <td>
+                    <div class="d-flex align-items-center" style="min-width: 150px;">
+                        <div style="flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${width}%; height: 100%; background: ${barColor}; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    function updateCOChart(course) {
+        const ctx = document.getElementById('coAttainmentChart');
+        
+        if (currentChart) {
+            currentChart.destroy();
+            currentChart = null;
+        }
+        
+        const labels = course.outcomes.map(co => `CO${co.co_number}`);
+        const data = course.outcomes.map(co => parseFloat(co.avg_attainment) || 0);
+        const responses = course.outcomes.map(co => co.response_count);
+        
+        console.log('Chart labels:', labels);
+        console.log('Chart data:', data);
+        
+        // Generate colors based on values
+        const backgroundColors = data.map(value => {
+            if (value >= 4) return 'rgba(34, 197, 94, 0.8)';
+            if (value >= 3) return 'rgba(59, 130, 246, 0.8)';
+            return 'rgba(251, 146, 60, 0.8)';
+        });
+        
+        const borderColors = data.map(value => {
+            if (value >= 4) return 'rgba(34, 197, 94, 1)';
+            if (value >= 3) return 'rgba(59, 130, 246, 1)';
+            return 'rgba(251, 146, 60, 1)';
+        });
+        
+        currentChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Average Attainment',
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: `Course Outcome Attainment - ${course.course_code}`,
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: 20
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const idx = context.dataIndex;
+                                return `Responses: ${responses[idx]}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return value + '/5';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Attainment Level'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Course Outcomes'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('Chart created successfully');
+    }
+});
+</script>
+
+{% endblock %}

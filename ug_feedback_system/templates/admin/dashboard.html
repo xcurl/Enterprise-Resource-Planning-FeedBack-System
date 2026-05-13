@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - UG Feedback System{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="bi bi-speedometer2 text-primary me-2"></i>Admin Dashboard</h1>
+                <p class="mb-0">Welcome back, {{ current_user.user_name }}!</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                {% if stats.feedback_open %}
+                <span class="badge badge-status badge-open fs-6">
+                    <i class="bi bi-circle-fill me-1"></i>Feedback Window Open
+                </span>
+                {% else %}
+                <span class="badge badge-status badge-closed fs-6">
+                    <i class="bi bi-circle-fill me-1"></i>Feedback Window Closed
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+                <div class="icon primary">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3>{{ stats.total_students }}</h3>
+                <p>Total Students</p>
+                <small class="text-success">{{ stats.eligible_students }} eligible</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+                <div class="icon success">
+                    <i class="bi bi-person-workspace"></i>
+                </div>
+                <h3>{{ stats.total_faculty }}</h3>
+                <p>Faculty Members</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+                <div class="icon secondary">
+                    <i class="bi bi-chat-square-text"></i>
+                </div>
+                <h3>{{ stats.total_feedbacks }}</h3>
+                <p>Feedbacks Received</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+                <div class="icon warning">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <h3>{{ stats.total_co_surveys }}</h3>
+                <p>CO Surveys</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Period -->
+    {% if stats.active_period %}
+    <div class="alert alert-success mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-calendar-check me-2"></i>
+                <strong>Active Period:</strong> {{ stats.active_period.period_name }}
+                <span class="ms-2 text-muted">
+                    ({{ stats.active_period.start_date.strftime('%d %b') }} - {{ stats.active_period.end_date.strftime('%d %b %Y') }})
+                </span>
+            </div>
+            <a href="{{ url_for('admin.feedback_control') }}" class="btn btn-outline-success btn-sm">
+                Manage
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        No active feedback period. 
+        <a href="{{ url_for('admin.feedback_control') }}">Create or activate a period</a>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <h4 class="mb-3"><i class="bi bi-lightning-fill text-warning me-2"></i>Quick Actions</h4>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('admin.feedback_control') }}" class="action-card">
+                <div class="icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-sliders"></i>
+                </div>
+                <h4>Feedback Control</h4>
+                <p>Open/close feedback window, manage periods</p>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('admin.students') }}" class="action-card">
+                <div class="icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h4>Manage Students</h4>
+                <p>View students, control eligibility</p>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('admin.assignments') }}" class="action-card">
+                <div class="icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <h4>Faculty Assignments</h4>
+                <p>Assign faculty to courses</p>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('admin.reports') }}" class="action-card">
+                <div class="icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h4>View Reports</h4>
+                <p>Faculty performance and CO analysis</p>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('admin.courses') }}" class="action-card">
+                <div class="icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-book"></i>
+                </div>
+                <h4>Manage Courses</h4>
+                <p>Add and manage courses</p>
+            </a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <a href="{{ url_for('admin.faculty') }}" class="action-card">
+                <div class="icon bg-secondary bg-opacity-10 text-secondary">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <h4>Manage Faculty</h4>
+                <p>Add and manage faculty members</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

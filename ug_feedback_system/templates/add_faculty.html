@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Faculty</title>
+<style>
+body {
+    background: linear-gradient(135deg,#ff9966,#ff5e62);
+    font-family: Arial;
+}
+.card {
+    background: white;
+    width: 420px;
+    margin: 100px auto;
+    padding: 30px;
+    border-radius: 12px;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+}
+button {
+    background: #ff5e62;
+    color: white;
+    border: none;
+}
+</style>
+</head>
+
+<body>
+<div class="card">
+    <h2>Assign Faculty</h2>
+    <form action="/faculty/assign" method="POST">
+        <input name="faculty_name" placeholder="Faculty Name" required>
+        <input name="course_id" placeholder="Course ID" required>
+        <button>Assign Faculty</button>
+    </form>
+</div>
+</body>
+</html>

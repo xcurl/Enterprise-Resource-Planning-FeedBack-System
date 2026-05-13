@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Courses - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    .search-input {
+        border-radius: 12px;
+        padding: 12px 16px;
+        padding-left: 45px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s;
+    }
+    
+    .search-input:focus {
+        border-color: #ef476f;
+        box-shadow: 0 0 0 3px rgba(239, 71, 111, 0.15);
+    }
+    
+    .search-wrapper {
+        position: relative;
+    }
+    
+    .search-wrapper i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .filter-select {
+        border-radius: 12px;
+        padding: 10px 16px;
+        border: 2px solid #e9ecef;
+    }
+    
+    .filter-select:focus {
+        border-color: #ef476f;
+        box-shadow: 0 0 0 3px rgba(239, 71, 111, 0.15);
+    }
+    
+    .results-count {
+        background: linear-gradient(135deg, #ef476f 0%, #f78fb3 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    .table-row-hidden {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <div class="page-header">
+        <h1><i class="bi bi-book-fill text-danger me-2"></i>Manage Courses</h1>
+        <p>Add and manage courses and their Course Outcomes (COs) in the system.</p>
+    </div>
+
+    <div class="row">
+        <!-- Add Course Form -->
+        <div class="col-lg-4 mb-4">
+            <div class="form-card h-100">
+                <h5><i class="bi bi-plus-circle me-2"></i>Add New Course</h5>
+                
+                <form action="{{ url_for('admin.add_course') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Course Code</label>
+                        <input type="text" class="form-control" name="course_code" 
+                               placeholder="e.g., CS101" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Course Name</label>
+                        <input type="text" class="form-control" name="course_name" 
+                               placeholder="e.g., Introduction to Programming" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control" name="department" 
+                               placeholder="e.g., Computer Science">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Semester</label>
+                            <select class="form-select" name="semester" required>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Credits</label>
+                            <input type="number" class="form-control" name="credits" 
+                                   value="3" min="1" max="6">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg me-2"></i>Add Course
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Courses List -->
+        <div class="col-lg-8 mb-4">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold"><i class="bi bi-search me-2"></i>Search</label>
+                        <div class="search-wrapper">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="form-control search-input" id="searchInput" 
+                                   placeholder="Search by code or name..." onkeyup="filterCourses()">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold"><i class="bi bi-calendar me-2"></i>Semester</label>
+                        <select class="form-select filter-select" id="semesterFilter" onchange="filterCourses()">
+                            <option value="">All Semesters</option>
+                            {% for sem in range(1, 9) %}
+                            <option value="{{ sem }}">Semester {{ sem }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold"><i class="bi bi-list-check me-2"></i>COs</label>
+                        <select class="form-select filter-select" id="coFilter" onchange="filterCourses()">
+                            <option value="">All</option>
+                            <option value="has-co">Has COs</option>
+                            <option value="no-co">No COs</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <span class="results-count" id="resultsCount">{{ courses|length }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-card">
+                <h5><i class="bi bi-list-ul me-2"></i>All Courses</h5>
+                
+                {% if courses|length == 0 %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-book"></i>
+                    <p>No courses added yet.</p>
+                </div>
+                {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="coursesTable">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Semester</th>
+                                <th>Credits</th>
+                                <th>COs</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in courses %}
+                            <tr data-code="{{ course.course_code|lower }}"
+                                data-name="{{ course.course_name|lower }}"
+                                data-semester="{{ course.semester }}"
+                                data-co="{{ 'has-co' if course.co_count and course.co_count > 0 else 'no-co' }}">
+                                <td><strong>{{ course.course_code or 'N/A' }}</strong></td>
+                                <td>{{ course.course_name }}</td>
+                                <td>{{ course.department or 'N/A' }}</td>
+                                <td><span class="badge bg-primary">Sem {{ course.semester }}</span></td>
+                                <td><span class="badge bg-info">{{ course.credits or 3 }}</span></td>
+                                <td>
+                                    <span class="badge {% if course.co_count > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ course.co_count or 0 }} COs
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#coModal{{ course.course_id }}"
+                                            title="Manage Course Outcomes">
+                                        <i class="bi bi-list-check"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Outcome Modals -->
+{% for course in courses %}
+<div class="modal fade" id="coModal{{ course.course_id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-list-check me-2"></i>Course Outcomes - {{ course.course_code }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">{{ course.course_name }}</p>
+                
+                <!-- Add CO Form -->
+                <form action="{{ url_for('admin.add_course_outcome_route') }}" method="POST" class="mb-4">
+                    <input type="hidden" name="course_id" value="{{ course.course_id }}">
+                    <div class="row align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label">CO #</label>
+                            <input type="number" class="form-control" name="co_number" 
+                                   min="1" max="10" placeholder="1" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" name="co_description" 
+                                   placeholder="Understand fundamental concepts..." required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Bloom's Level</label>
+                            <select class="form-select" name="bloom_level">
+                                <option value="">Select...</option>
+                                <option value="Remembering">Remembering</option>
+                                <option value="Understanding">Understanding</option>
+                                <option value="Applying">Applying</option>
+                                <option value="Analyzing">Analyzing</option>
+                                <option value="Evaluating">Evaluating</option>
+                                <option value="Creating">Creating</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Existing COs -->
+                <h6><i class="bi bi-list-ol me-2"></i>Defined Course Outcomes</h6>
+                {% if course.outcomes and course.outcomes|length > 0 %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>CO</th>
+                            <th>Description</th>
+                            <th>Bloom's Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for co in course.outcomes %}
+                        <tr>
+                            <td><span class="badge bg-primary">CO{{ co.co_number }}</span></td>
+                            <td>{{ co.co_description }}</td>
+                            <td><span class="badge bg-secondary">{{ co.bloom_level or 'N/A' }}</span></td>
+                            <td>
+                                <form action="{{ url_for('admin.delete_course_outcome_route', co_id=co.co_id) }}" 
+                                      method="POST" class="d-inline"
+                                      onsubmit="return confirm('Delete this course outcome?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    No course outcomes defined yet. Add COs above to enable CO Survey for students.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+function filterCourses() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const semesterFilter = document.getElementById('semesterFilter').value;
+    const coFilter = document.getElementById('coFilter').value;
+    
+    const rows = document.querySelectorAll('#coursesTable tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const code = row.dataset.code || '';
+        const name = row.dataset.name || '';
+        const semester = row.dataset.semester || '';
+        const co = row.dataset.co || '';
+        
+        const matchesSearch = searchTerm === '' || 
+            code.includes(searchTerm) || 
+            name.includes(searchTerm);
+        
+        const matchesSemester = semesterFilter === '' || semester === semesterFilter;
+        const matchesCO = coFilter === '' || co === coFilter;
+        
+        if (matchesSearch && matchesSemester && matchesCO) {
+            row.classList.remove('table-row-hidden');
+            visibleCount++;
+        } else {
+            row.classList.add('table-row-hidden');
+        }
+    });
+    
+    document.getElementById('resultsCount').textContent = visibleCount;
+}
+</script>
+{% endblock %}

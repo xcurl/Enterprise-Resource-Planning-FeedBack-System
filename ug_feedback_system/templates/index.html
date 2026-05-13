@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>UG Feedback System</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #667eea, #764ba2);
+    margin: 0;
+    padding: 0;
+    color: white;
+}
+.container {
+    max-width: 900px;
+    margin: 60px auto;
+}
+.card {
+    background: white;
+    color: #333;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+h1 {
+    text-align: center;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 30px;
+}
+a {
+    text-decoration: none;
+}
+.button {
+    background: linear-gradient(45deg,#667eea,#764ba2);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+.button:hover {
+    transform: scale(1.05);
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="card">
+        <h1>UG Students Feedback System</h1>
+        <div class="grid">
+            <a href="/add-course" class="button">➕ Add Course</a>
+            <a href="/add-faculty" class="button">👨‍🏫 Add Faculty</a>
+            <a href="/register-student" class="button">🎓 Register Student</a>
+            <a href="/submit-feedback" class="button">📝 Submit Feedback</a>
+            <a href="/view-feedback" class="button">📊 View Feedback</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
